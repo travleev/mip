@@ -43,55 +43,77 @@ class BIDClass(object):
         #   data
         self.__order = 'mtcsd'
 
-        for i, c in enumerate(self.__order):
-            self.__setattr__(c, i)
+        self.m = 0
+        self.t = 1
+        self.c = 2
+        self.s = 3
+        self.d = 4
 
-    def __item__(self, i):
+    def __getitem__(self, i):
         return self.__order[i]
 
 
 bid = BIDClass()
 
 
-def get_blocks(text, start=None):
+def get_block_positions(text, firstblock=None):
     """
-    Returns a dictionary with separate blocks.
+    Returns a dictionary with tuple of indices that identify block begin and
+    end.
     """
 
+    # Resulting dictionary
+    dres = {}
+
+    # Regular expresison for blank line delimiter
     bld = re.compile('^\s*$', re.MULTILINE)
 
-    # Blocks are separated by empty lines (except title and cells).
-    bounds = []
-    pos = 0
-    while pos < len(text):
-        pos = bld.search(text, pos + 1).start()
-        bounds.append(pos)
+    # Re.split() does not split on empty matches. Therefore, match positions
+    # are searched and blocks are build manually.
+    bi = []
+    ps = 0  # block start position
+    while ps < len(text):
+        # match.start() returns index of the 1-st character of the found match,
+        # in case of bld this is the next char  after the 1-st \n.
+        pe = bld.search(text, ps).start()
+        bi.append((ps, pe - 1))
+        ps = pe + 1
 
-    # Define the 1-st block
-    # If the 1-st block is a message block, than if there is only two blocks,
-    # this is a continue-run input and the second block is the data block. If
-    # there are more than 2 blocks, this is a initial-run input and the first
-    # block after the message block is the title-block.
-    if is_message_block(text[0:bounds[0]]):
-        if len(bounds) <= 2:
-            b = 'd'
+    # Check if message block exists
+    if text[:20].split()[0].lower() == 'message:':
+        dres['m'] = bi.pop(0)
+
+    # Define type of the first block, if not given explicitly
+    if firstblock is None:
+        if len(bi) == 1:
+            firstblock = bid.d
         else:
-            b = 't'
+            firstblock = bid.t
+            i1, i2 = split_line_index(text, bi[0][0])
+            bi.insert(0, (bi[0][0], i1))
+            bi[1] = (i2, bi[1][1])
+
+    cb = firstblock
+    while bi:
+        dres[bid[cb]] = bi.pop(0)
+        cb += 1
+
+    return dres
 
 
-    return bounds
-
-
-def is_message_block(txt):
+def split_line_index(mlstring, start=0):
     """
-    Checks if txt is a message block.
+    Return two indices, for the end of the 1-st line and start of the next one.
     """
-    kw = txt[:50].split()[0].lower()
-    return kw == 'message'
+    r = re.compile('[\r\n]+')
+    m = r.search(mlstring, start)
+    return m.start(), m.end()
 
 
 if __name__ == '__main__':
-    txt = open('cmodel.inp', 'r').read()
-    d = get_blocks(txt)
-    for i in d:
-        print repr(txt[i-10: i+10])
+    from sys import argv
+    txt = open(argv[1], 'r').read()
+    d = get_block_positions(txt)
+    for k, ii in d.items():
+        s = txt[slice(*ii)]
+        print k, repr(s[:80]), "...", repr(s[-80:])
