@@ -1,8 +1,13 @@
 message: runtpe = run1
 
 Problem's title
+c this is the 1-st B-comment in card block
 1 0 -1 imp:n=1
+c       this is a C-comment
+        imp:p=0
+        imp:e=0
 
+c Surfaces
 1 so 10
 
 m1 1001 1
