@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+import utils
 
 """
 Split MCNP input file to blocks.
@@ -76,12 +77,16 @@ def get_block_positions(text, firstblock=None):
         # match.start() returns index of the 1-st character of the found match,
         # in case of bld this is the next char  after the 1-st \n.
         pe = bld.search(text, ps).start()
-        bi.append((ps, pe - 1))
+        bi.append((ps, pe))
         ps = pe + 1
 
+    # Line count. Starts form 1, to be consistent with vim's G
+    line = 1
     # Check if message block exists
     if text[:20].split()[0].lower() == 'message:':
-        dres['m'] = bi.pop(0)
+        dres['m'] = bi[0], line
+        line += number_of_lines(txt, *bi[0])
+        bi.pop(0)
 
     # Define type of the first block, if not given explicitly
     if firstblock is None:
@@ -95,7 +100,9 @@ def get_block_positions(text, firstblock=None):
 
     cb = firstblock
     while bi:
-        dres[bid[cb]] = bi.pop(0)
+        dres[bid[cb]] = bi[0], line
+        line += number_of_lines(text, *bi[0])
+        bi.pop(0)
         cb += 1
 
     return dres
@@ -110,10 +117,24 @@ def split_line_index(mlstring, start=0):
     return m.start(), m.end()
 
 
+def number_of_lines(txt, start=None, end=None):
+    """
+    Return number of lines in the multi-line string txt.
+    """
+    if start is None:
+        start = 0
+    if end is None:
+        end = len(txt)
+    if '\r' in txt:
+        return txt.count('\r', start, end) + 1
+    else:
+        return txt.count('\n', start, end) + 1
+
+
 if __name__ == '__main__':
     from sys import argv
     txt = open(argv[1], 'r').read()
     d = get_block_positions(txt)
-    for k, ii in d.items():
+    for k, (ii, l) in d.items():
         s = txt[slice(*ii)]
-        print k, repr(s[:80]), "...", repr(s[-80:])
+        print k, l, utils.shorten(s)
