@@ -85,7 +85,7 @@ def get_block_positions(text, firstblock=None):
     # Check if message block exists
     if text[:20].split()[0].lower() == 'message:':
         dres['m'] = bi[0], line
-        line += number_of_lines(txt, *bi[0])
+        line += number_of_lines(text, *bi[0])
         bi.pop(0)
 
     # Define type of the first block, if not given explicitly
