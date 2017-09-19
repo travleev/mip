@@ -38,9 +38,11 @@ Options are optional.
 """
 
 import re
+import cards
+import cardcontent
 
 # RE to find where options start
-re_options = re.compile('([)\s])([a-zA-Z].*)$')
+re_options = re.compile('([\)\s])([a-zA-Z].*)$')
 
 # RE describing pattern of cell card without options
 re_likebut = re.compile(r"""^(\s*[0-9]+)     # name
@@ -70,8 +72,13 @@ def split_cell_card(txt):
         mat = ''
     else:
         # Extract options
-        p1, p2, opts, _ = re_options.split(txt)
-        txt = p1 + p2
+        parts = re_options.split(txt)
+        if len(parts) == 4:
+            # txt has options
+            p1, p2, opts, _ = parts
+            txt = p1 + p2
+        else:
+            opts = ''
         if float(t2) == 0:
             name, mat, geom = re_void.findall(txt)[0]
         else:
@@ -79,17 +86,23 @@ def split_cell_card(txt):
     return name, mat, geom, opts
 
 
+def get_cards_from_file(fname):
+    """
+    Yield splitted cell cards from an input file.
+    """
+    for c, n, t in cards.get_cards_from_file(fname,
+                                             preservecommentlines=False,
+                                             blocks='c'):
+        c = cardcontent.card_content(c)
+        yield n, split_cell_card(c)
+
+
 if __name__ == '__main__':
     from sys import argv
-    from cards import get_cards_from_file
-    from cardcontent import card_content
-    for c1, n, t in get_cards_from_file(argv[1],
-                                        preservecommentlines=False,
-                                        blocks='c'):
-        c2 = card_content(c1)
-        name, mat, geom, opts = split_cell_card(c2)
+    for n, cc in get_cards_from_file(argv[1]):
+        name, mat, geom, opts = cc
 
-        print n, t, '*'*80
+        print n, '*'*80
         print 'name', repr(name)
         print 'mat', repr(mat)
         print 'geom', repr(geom)
