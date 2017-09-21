@@ -3,6 +3,7 @@
 
 import re
 import utils
+from blocks import get_block_positions
 
 """
 Split one block of MCNP input file into separate cards and inter-card comments.
@@ -23,21 +24,30 @@ re_comment = re.compile('^\s{0,4}[cC](\s|$)')
 re_continuation = re.compile('^\s{5,}')
 
 
-def get_cards(block):
+def get_cards(block, preservecommentlines=True):
     """
 
     """
 
+    # List of comment lines
     cmnt = []
+    # List of lines describing a card
     card = []
+    # Line number where card or block of comments starts:
     n_card = 0
     n_cmnt = 0
+
     # Function used at two places below
-    def _yield():
-        if card:
-            yield card, n_card, 'card'
-        if cmnt:
-            yield cmnt, n_cmnt, 'cmnt'
+    if preservecommentlines:
+        def _yield():
+            if card:
+                yield card, n_card, 'card'
+            if cmnt:
+                yield cmnt, n_cmnt, 'cmnt'
+    else:
+        def _yield():
+            if card:
+                yield card, n_card, 'card'
     lprev = None  # previous card line
     for n, l in enumerate(block.splitlines()):
         # if comment, then  add to block of comments
@@ -49,7 +59,8 @@ def get_cards(block):
             cmnt.append(l)
         elif is_continuation(l, lprev):
             if cmnt:
-                card.extend(cmnt)
+                if preservecommentlines:
+                    card.extend(cmnt)
                 cmnt = []
                 n_cmnt = n + 1
             card.append(l)
@@ -65,6 +76,22 @@ def get_cards(block):
     # At the end of block, yield the last card and comments (this code must be
     # the same as in `else` clause above)
     for r in _yield(): yield r
+
+
+def get_cards_from_file(fname, preservecommentlines=True, blocks='tcsd'):
+    """
+    Iterator over cards from file fname.
+
+    Optional argument `blocks` defines blocks and their order, from whose
+    cards will be returned.
+    """
+    text = open(fname, 'r').read()
+    dbi = get_block_positions(text)
+    for b in blocks:
+        if b in dbi:
+            ii, l = dbi[b]
+            for c, n, t in get_cards(text[slice(*ii)], preservecommentlines):
+                yield c, n + l, t
 
 
 def is_comment_line(l):

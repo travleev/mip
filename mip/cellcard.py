@@ -1,5 +1,5 @@
 #!/urs/bin/env python
--*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 """
 Split cell card in name, material, geometry and options.
@@ -26,24 +26,38 @@ The part with optional parameters starts with an alphabet character. It
 preceeded with a number followed by one or more space, or closing parenthesis,
 followed by zero or more spaces.
 
+Patterns of the cell card. Parts are delimited by '|' (one or more spaces) or
+by '||' (zero or more spaces, or parentheses).
+
+    N | like    | n | but        | options
+    N | zero            || geom || options
+    N | non-zero | dens || geom || options
+
+Options are optional.
+
 """
 
 import re
+import cards
+import cardcontent
 
+# RE to find where options start
+re_options = re.compile('([\)\s])([a-zA-Z].*)$')
+
+# RE describing pattern of cell card without options
 re_likebut = re.compile(r"""^(\s*[0-9]+)     # name
                              (\s+like.*but)  # like-but geometry
-                             (.*)$  i        # the rest -- options """,
-                        re.IGNORECASE, re.VERBOSE)
-re_void = re.compile(r"""^(\s*[0-9]+)       # name
-                          (\s+\S+)          # zero material
-                          ([)(0-9\s:#-+])   # geometry
-                          (.*)$             # rest -- options""",
-                     re.IGNORECASE, re.VERBOSE)
-re_nonvoid = re.compile(r"""^(\s*[0-9]+)       # name
-                             (\s+\S+\s+\S+)    # material and density
-                             ([)(0-9\s:#-+])   # geometry
-                             (.*)$             # rest -- options""",
-                     re.IGNORECASE, re.VERBOSE)
+                             (.*)$           # options""",
+                        re.IGNORECASE + re.VERBOSE)
+re_void = re.compile(r"""^(\s*[0-9]+)        # name
+                          (\s+\S+)           # zero material
+                          (.*)$              # geometry""",
+                     re.IGNORECASE + re.VERBOSE)
+re_nonvoid = re.compile(r"""^(\s*[0-9]+)        # name
+                             (\s+\S+\s+\S+)     # material and density
+                             (.*)$              # geometry""",
+                        re.IGNORECASE + re.VERBOSE)
+
 
 def split_cell_card(txt):
     """
@@ -51,13 +65,45 @@ def split_cell_card(txt):
 
     String `txt` must have no comments and new-line characters.
     """
-    name, tn, trest = txt.split(None, 2)
-    if tn.lower() == 'like':
+    # Extract name
+    name, t2, _ = txt.split(None, 2)
+    if t2.lower() == 'like':
         name, geom, opts = re_likebut.findall(txt)[0]
         mat = ''
-    elif float(tn) == 0.0:
-        name, mat, geom, opts = re_void.findall(txt)[0]
     else:
-        name, mat, geom, opts = re_nonvoid.findall(txt)[0]
+        # Extract options
+        parts = re_options.split(txt)
+        if len(parts) == 4:
+            # txt has options
+            p1, p2, opts, _ = parts
+            txt = p1 + p2
+        else:
+            opts = ''
+        if float(t2) == 0:
+            name, mat, geom = re_void.findall(txt)[0]
+        else:
+            name, mat, geom = re_nonvoid.findall(txt)[0]
     return name, mat, geom, opts
 
+
+def get_cards_from_file(fname):
+    """
+    Yield splitted cell cards from an input file.
+    """
+    for c, n, t in cards.get_cards_from_file(fname,
+                                             preservecommentlines=False,
+                                             blocks='c'):
+        c = cardcontent.card_content(c)
+        yield n, split_cell_card(c)
+
+
+if __name__ == '__main__':
+    from sys import argv
+    for n, cc in get_cards_from_file(argv[1]):
+        name, mat, geom, opts = cc
+
+        print n, '*'*80
+        print 'name', repr(name)
+        print 'mat', repr(mat)
+        print 'geom', repr(geom)
+        print 'opts', repr(opts)
