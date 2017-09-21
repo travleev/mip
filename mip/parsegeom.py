@@ -2,36 +2,37 @@
 # -*- coding: utf-8 -*-
 
 import re
+from codecs import open
+import tatsu
+from tatsu.ast import AST
+from semantics import GeomSemantics
 
-GRAMMAR = """
-
-    start = expr $;
-
-    expr =
-        | expr ':' isect
-        | isect;
-
-    isect =
-        | isect '*' operand
-        | operand;
-
-    operand =
-        | '(' @:expr ')'
-        | surface;
-
-    surface = /[-+]{0,1}\d+/;
-
-
-"""
+grammar = open('grammars/geom.ebnf', 'r').read()
+parser = tatsu.compile(grammar)
 
 # patterns to replace space denoting intersection with '*'
 re_union = re.compile('\s*:\s*')
-re_spaces = re.compile('\s+')
 re_pareno = re.compile('\(\s*')
 re_parenc = re.compile('\s*\)')
+re_spaces = re.compile('\s+')
+
+
+def normalize(geom):
+    """
+    Replace spaces denoting intersection with `*`.
+
+    Also replace '#' denoting complement with '_' .
+    """
+    g = geom.strip()
+    g = re_union.sub(':', g)
+    g = re_pareno.sub('(', g)
+    g = re_parenc.sub(')', g)
+    g = re_spaces.sub('*', g)
+    g = g.replace('#', '_')
+    return g
+
 
 if __name__ == '__main__':
-    import tatsu
     import pprint
     import json
     from sys import argv
@@ -43,14 +44,13 @@ if __name__ == '__main__':
         print '*'*60
         print n, repr(geom)
         if 'like' not in geom.lower():
-            g = geom.strip()
-            g = re_union.sub(':', g)
-            g = re_pareno.sub('(', g)
-            g = re_parenc.sub(')', g)
-            g = re_spaces.sub('*', g)
+            g = normalize(geom)
             print n, repr(g)
-            ast = tatsu.parse(GRAMMAR, g)
+            ast = parser.parse(g, semantics=GeomSemantics())
             pprint.pprint(ast, indent=2, width=20)
+            print ast.evaluate()
+            if isinstance(ast, AST):
+                print json.dumps(ast.asjson(), indent=4)
 
         else:
             pprint.pprint(geom)
