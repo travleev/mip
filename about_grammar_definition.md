@@ -48,7 +48,7 @@ is another expression or a value, and the right operand is a value.
 
 The fact that in the first option operands are of differnet type, `expr` and
 `value`, allows to parse the original expression unambigouosly. If the
-1-st option were ```expr = expr '+' expr```, it would match the sum in several
+1-st option were `expr = expr '+' expr`, it would match the sum in several
 ways:
 
 ```
@@ -64,14 +64,14 @@ Now consider another expression, where both operations are used:
 ```
     a + b * c + d                  (2)
 ```
-Since '*' is evalueated first, this expression is equal to
+Since `*` is evalueated first, this expression is equal to
 
 ```
     a + (b*c) + d
 ```
 Here we see that expression is again a sum of elements, but in this case, one
 of operands can be the result of multiplication. Since the result of
-multiplication can appear as the left of right operand of '*', the 1-st option
+multiplication can appear as the left of right operand of `*`, the 1-st option
 of the above grammar must be modified by introducing a new type, `mult`:
 
 ```
@@ -86,29 +86,28 @@ of the above grammar must be modified by introducing a new type, `mult`:
 When this grammar applied to expression (2):
 
 ```
-    expr: 'a + b * c'          '+'  'd'
-    expr: 'a' '+' 'b * c'
-    mult:         'b' '*' 'c'
+    'a + b * c'  '+'  'd'
+    'a'  '+'  'b * c'
+    'b'  '*'  'c'
 ```
 
 The order of operators, parsed with the grammar, depends on the first assumption
 on the form of the expression. In the grammar above, it is first assumed that the
-expression is a sum, '+', which operand is another expression. The operands
-will be evaluated first, consequently, the '+' operator will be evaluated after
+expression is a sum, `+`, which operand is another expression. The operands
+will be evaluated first, consequently, the `+` operator will be evaluated after
 the others. 
 
 Parentheses are added to the grammar by allowing `expr`, `mult` or `value` be
-circumscribed with '(' and ')' and specifying that the obtained form is, again,
+circumscribed with `'('` and `')'` and specifying that the obtained form is, again,
 an expression `expr` (maybe not directly). Let consider the following expression:
 
 ```
     a + b * (c + d)                            (3)
 ```
 This expression cannot be parsed with the above parser, since the right operand
-of '+' does not match to the form ```mult '*' value```, since it contains ```(c
-+ d)``` on the place of ```value```. Let us modify the ```value``` rule to have
+of '+' does not match to the form `mult '*' value`, since it contains `(c+ d)` 
+on the place of `value`. Let us modify the `value` rule to have
 two forms:
-
 
 ```
     value = 
@@ -137,9 +136,9 @@ expression
 ```
     a + (b*c) + d                                (4)
 ```
-This expression can be matched by the unmodified version of ```expr``` and
-splitted into ```a + (b*c)```, ```+``` and ```d```.  The left operand does not
-match to the original ```expr`` and we could assume another modification to
+This expression can be matched by the unmodified version of `expr` and
+splitted into `a + (b*c)`, `+` and `d`.  The left operand does not
+match to the original `expr` and we could assume another modification to
 account for parentheses:
 
 ```
@@ -148,7 +147,7 @@ account for parentheses:
         | mult '*' value
         | value;
 ```
-where ```value``` is the terminal rule. Expression (4) is parsed into the
+where `value` is the terminal rule. Expression (4) is parsed into the
 following chunks:
 
 ```
@@ -157,7 +156,7 @@ following chunks:
     'b' '*' 'c'
 ``` 
 While expression (3) cannot be parsed, while 'b * (c + d)' does not match to
-any option of ```mult```. 
+any option of `mult`. 
 
 ```
     'a' '+' 'b * (c + d)'
