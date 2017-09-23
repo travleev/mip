@@ -24,9 +24,13 @@ def normalize(geom):
     Also replace '#' denoting complement with '_' .
     """
     g = geom.strip()
+
+    # remove spaces around ':' operator
     g = re_union.sub(':', g)
+    # remove spaces after '(' and before ')'
     g = re_pareno.sub('(', g)
     g = re_parenc.sub(')', g)
+    # replace one or more spaces with exactly one ' '.
     g = re_spaces.sub('*', g)
     g = g.replace('#', '_')
     return g
