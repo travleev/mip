@@ -7,10 +7,9 @@ import tatsu
 from tatsu.ast import AST
 
 from semantics import GeomSemantics
-import cellcard
 
 grammar = open('grammars/geom.ebnf', 'r').read()
-parser = tatsu.compile(grammar)
+parser = tatsu.compile(grammar)  # , left_recurion=False)
 
 # patterns to replace space denoting intersection with '*'
 re_union = re.compile('\s*:\s*')
@@ -45,21 +44,48 @@ def get_ast(geom):
     ast = parser.parse(g, semantics=GeomSemantics())
     return ast
 
-def get_cards_from_file(fname):
-    for n, cc in cellcard.get_cards_from_file(fname):
-        name, mat, geom, opts = cc
-        ast = get_ast(geom)
-        yileld n, (name, mat, geom, ast, opts)
+
+def modify_ast(ast, d):
+    """
+    Assume ast is a recursive tuple with integers as terminal elements (signed
+    surfaces).  Replace surfaces with their card representation, prepended with
+    sign.
+    """
+    def mapping(e):
+        return modify_ast(e, d)
+
+    print '***', repr(ast)
+
+    if isinstance(ast, tuple):
+        return map(mapping, ast)
+    elif isinstance(ast, str):
+        return ast
+    else:
+        return ast > 0, d[abs(ast)]
+
+    return map(mapping, ast)
 
 
 if __name__ == '__main__':
-    import pprint
     from sys import argv
+    from mip import MIP
+    from mip.utils import shorten
 
-    for n, cc in get_cards_from_file(argv[1]):
-        name, mat, geom, ast, opts = cc
+    input = MIP(argv[1])
 
-        print '*'*60
-        print n, repr(geom)
+    n = 0
+    for c in input.cards(blocks='c', skipcomments=True):
+        name, mat, geom, opts = c.parts()
+        print n, c.position, name, shorten(geom)
         ast = get_ast(geom)
-        pprint.pprint(ast, indent=2, width=10)
+        print repr(ast)
+        n += 1
+        if n >= 100:
+            break
+    # for n, cc in get_cards_from_file(argv[1]):
+    #     name, mat, geom, ast, opts = cc
+
+    #     print '*'*60
+    #     print n, repr(geom)
+    #     ast = get_ast(geom)
+    #     pprint.pprint(ast, indent=2, width=10)

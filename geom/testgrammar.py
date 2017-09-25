@@ -6,10 +6,6 @@ import tatsu
 from importlib import import_module
 from os.path import basename
 
-grammar = open('{}.ebnf'.format(argv[1])).read()
-parser = tatsu.compile(grammar)
-semantics = import_module('grammars.{}'.format(basename(argv[1])))
-
 
 def pprint_dict(d, indent=4, _level=1):
     i = ' ' * indent * _level
@@ -34,6 +30,11 @@ def pprint_dict(d, indent=4, _level=1):
 if __name__ == '__main__':
     from cellcard import get_cards_from_file
     from parsegeom import normalize
+
+    grammar = open('{}.ebnf'.format(argv[1])).read()
+    parser = tatsu.compile(grammar)
+    semantics = import_module('grammars.{}'.format(basename(argv[1])))
+
 
     for n, cc in get_cards_from_file(argv[2]):
         name, mat, geom, opts = cc
