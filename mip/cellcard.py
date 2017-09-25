@@ -38,8 +38,6 @@ Options are optional.
 """
 
 import re
-import cards
-import cardcontent
 
 # RE to find where options start
 re_options = re.compile('([\)\s])([a-zA-Z].*)$')
@@ -84,26 +82,3 @@ def split_cell_card(txt):
         else:
             name, mat, geom = re_nonvoid.findall(txt)[0]
     return name, mat, geom, opts
-
-
-def get_cards_from_file(fname):
-    """
-    Yield splitted cell cards from an input file.
-    """
-    for c, n, t in cards.get_cards_from_file(fname,
-                                             preservecommentlines=False,
-                                             blocks='c'):
-        c = cardcontent.card_content(c)
-        yield n, split_cell_card(c)
-
-
-if __name__ == '__main__':
-    from sys import argv
-    for n, cc in get_cards_from_file(argv[1]):
-        name, mat, geom, opts = cc
-
-        print n, '*'*80
-        print 'name', repr(name)
-        print 'mat', repr(mat)
-        print 'geom', repr(geom)
-        print 'opts', repr(opts)

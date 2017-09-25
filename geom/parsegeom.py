@@ -5,7 +5,9 @@ import re
 from codecs import open
 import tatsu
 from tatsu.ast import AST
+
 from semantics import GeomSemantics
+import cellcard
 
 grammar = open('grammars/geom.ebnf', 'r').read()
 parser = tatsu.compile(grammar)
@@ -36,25 +38,28 @@ def normalize(geom):
     return g
 
 
+def get_ast(geom):
+    if 'like' in geom.lower():
+        return geom.split()[1]
+    g = normalize(geom)
+    ast = parser.parse(g, semantics=GeomSemantics())
+    return ast
+
+def get_cards_from_file(fname):
+    for n, cc in cellcard.get_cards_from_file(fname):
+        name, mat, geom, opts = cc
+        ast = get_ast(geom)
+        yileld n, (name, mat, geom, ast, opts)
+
+
 if __name__ == '__main__':
     import pprint
-    import json
     from sys import argv
-    from cellcard import get_cards_from_file
 
     for n, cc in get_cards_from_file(argv[1]):
-        name, mat, geom, opts = cc
+        name, mat, geom, ast, opts = cc
 
         print '*'*60
         print n, repr(geom)
-        if 'like' not in geom.lower():
-            g = normalize(geom)
-            print n, repr(g)
-            ast = parser.parse(g, semantics=GeomSemantics())
-            pprint.pprint(ast, indent=2, width=20)
-            print ast.evaluate()
-            if isinstance(ast, AST):
-                print json.dumps(ast.asjson(), indent=4)
-
-        else:
-            pprint.pprint(geom)
+        ast = get_ast(geom)
+        pprint.pprint(ast, indent=2, width=10)

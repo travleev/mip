@@ -29,5 +29,42 @@ Steps are:
     * Analysis of cards, necessary for particular needs (e.g. for renumbering
       in numjuggler) should be done separately.
 
+Semantic analysis of the geometry description of cells and surfaces should be
+implemented somewhere else, using funcitons defined in `mip` (i.e. here) for
+reading input file. 
+
+A user of `mip` can be interested in a whole input file, in a particular block,
+in a list of cards of particular type, or in a particular cell, surface or data
+card. The `mip` package should provide means to access all of the above in an
+effective way. For example::
+
+    import mip
+    
+    input = mip.MIP(fname)
+    
+    # get blocks as text
+    mb = input.block('m')
+    cb = input.block('c')
+    
+    # Cycle through cell cards:
+    for c in input.cells(preservecommentlines=False):
+        c.position  #  line in the input file where card c starts
+        c.type      #  type fo the card: cell, surface, data or comments
+        c.lines     #  original lines representing the card, tuple of strings
+        # remove in-card comments
+        c = mip.remove_comments(c)
+        # split cell card to parts
+        name, mat, geom, opts = mip.split_cell(c)
+        
+
+The `mip` subpackage splits an input file into parts of cards. A parseer,
+analysing the geometry description of cells, and creating a memory model of the
+geometry is realized in `geom` subpackage.
+
+        
+     
+
+
+
 
     

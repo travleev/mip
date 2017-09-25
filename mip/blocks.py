@@ -85,7 +85,7 @@ def get_block_positions(text, firstblock=None):
     # Check if message block exists
     if text[:20].split()[0].lower() == 'message:':
         dres['m'] = bi[0], line
-        line += number_of_lines(text, *bi[0])
+        line += utils.nol(text, *bi[0])
         bi.pop(0)
 
     # Define type of the first block, if not given explicitly
@@ -94,41 +94,18 @@ def get_block_positions(text, firstblock=None):
             firstblock = bid.d
         else:
             firstblock = bid.t
-            i1, i2 = split_line_index(text, bi[0][0])
+            i1, i2 = utils.newlineindex(text, bi[0][0])
             bi.insert(0, (bi[0][0], i1))
             bi[1] = (i2, bi[1][1])
 
     cb = firstblock
     while bi:
         dres[bid[cb]] = bi[0], line
-        line += number_of_lines(text, *bi[0])
+        line += utils.nol(text, *bi[0])
         bi.pop(0)
         cb += 1
 
     return dres
-
-
-def split_line_index(mlstring, start=0):
-    """
-    Return two indices, for the end of the 1-st line and start of the next one.
-    """
-    r = re.compile('[\r\n]+')
-    m = r.search(mlstring, start)
-    return m.start(), m.end()
-
-
-def number_of_lines(txt, start=None, end=None):
-    """
-    Return number of lines in the multi-line string txt.
-    """
-    if start is None:
-        start = 0
-    if end is None:
-        end = len(txt)
-    if '\r' in txt:
-        return txt.count('\r', start, end) + 1
-    else:
-        return txt.count('\n', start, end) + 1
 
 
 if __name__ == '__main__':

@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import re
-import utils
-from blocks import get_block_positions
 
 """
 Split one block of MCNP input file into separate cards and inter-card comments.
@@ -24,7 +22,14 @@ re_comment = re.compile('^\s{0,4}[cC](\s|$)')
 re_continuation = re.compile('^\s{5,}')
 
 
-def get_cards(block, preservecommentlines=True):
+# Function used at two places below
+def _yield(c1, n1, f, c2, n2):
+    if c1:
+        yield c1, n1, 'card'
+    if not f and c2:
+        yield c2, n2, 'cmnt'
+
+def get_cards(block, skipcomments=False):
     """
 
     """
@@ -37,17 +42,6 @@ def get_cards(block, preservecommentlines=True):
     n_card = 0
     n_cmnt = 0
 
-    # Function used at two places below
-    if preservecommentlines:
-        def _yield():
-            if card:
-                yield card, n_card, 'card'
-            if cmnt:
-                yield cmnt, n_cmnt, 'cmnt'
-    else:
-        def _yield():
-            if card:
-                yield card, n_card, 'card'
     lprev = None  # previous card line
     for n, l in enumerate(block.splitlines()):
         # if comment, then  add to block of comments
@@ -55,19 +49,19 @@ def get_cards(block, preservecommentlines=True):
         # card
         # if new card, then yield current card or current block of comments and
         # create a new current card
-        if is_comment_line(l):
+        if re_comment.match(l):
             cmnt.append(l)
         elif is_continuation(l, lprev):
-            if cmnt:
-                if preservecommentlines:
-                    card.extend(cmnt)
-                cmnt = []
-                n_cmnt = n + 1
+            if not skipcomments:
+                card.extend(cmnt)
+            cmnt = []
+            n_cmnt = n + 1
             card.append(l)
             lprev = l
         else:
             # this must be begin of a new card
-            for r in _yield(): yield r
+            for r in _yield(card, n_card, skipcomments, cmnt, n_cmnt):
+                yield r
             cmnt = []
             n_cmnt = n + 1
             card = [l]
@@ -75,34 +69,8 @@ def get_cards(block, preservecommentlines=True):
             lprev = l
     # At the end of block, yield the last card and comments (this code must be
     # the same as in `else` clause above)
-    for r in _yield(): yield r
-
-
-def get_cards_from_file(fname, preservecommentlines=True, blocks='tcsd'):
-    """
-    Iterator over cards from file fname.
-
-    Optional argument `blocks` defines blocks and their order, from whose
-    cards will be returned.
-    """
-    text = open(fname, 'r').read()
-    dbi = get_block_positions(text)
-    for b in blocks:
-        if b in dbi:
-            ii, l = dbi[b]
-            for c, n, t in get_cards(text[slice(*ii)], preservecommentlines):
-                yield c, n + l, t
-
-
-def is_comment_line(l):
-    """
-    Checks that l is a comment line.
-
-    Comment line is a line whose 1-st non-white character is "c" or "C"
-    followed by end-of-line of a space. The character "c" or "C" must
-    be within first 5 characters of the line.
-    """
-    return bool(re_comment.match(l))
+    for r in _yield(card, n_card, skipcomments, cmnt, n_cmnt):
+        yield r
 
 
 def is_continuation(l, prev=None):
@@ -118,16 +86,3 @@ def is_continuation(l, prev=None):
     elif prev and '&' in prev:
         return True
     return False
-
-
-if __name__ == '__main__':
-    from sys import argv
-    from blocks import get_block_positions
-    text = open(argv[1]).read()
-
-    dbi = get_block_positions(text)
-
-    for b, (ii, l) in dbi.items():
-        if b in 'csd':
-            for c, n, t in get_cards(text[slice(*ii)]):
-                print n + l, t, utils.shorten(c)
