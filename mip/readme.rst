@@ -24,4 +24,10 @@ Example of use::
         # String representing the card with comments removed
         print c.content()
         # The card, splitted into parts:
-        print c.parts()
+        p = c.parts()
+        if c.type == 'c':
+            name, mat, geom, opts = p
+            print name, mat, geom, opts
+        elif c.type == 's':
+            name, tr, st, params = p
+            print name, tr, st, params

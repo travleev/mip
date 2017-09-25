@@ -17,5 +17,5 @@ setup(name='mip',
       description='MCNP input file parser',
       author='A.Travleev',
       author_email='anton.travleev@kit.edu',
-      packages=['mip', ],
+      packages=['mip', 'geom'],
       )
