@@ -75,10 +75,11 @@ def get_block_positions(text, firstblock=None):
     ps = 0  # block start position
     while ps < len(text):
         # match.start() returns index of the 1-st character of the found match,
-        # in case of bld this is the next char  after the 1-st \n.
-        pe = bld.search(text, ps).start()
+        # in case of bld this is the next char after the 1-st \n.
+        m = bld.search(text, ps)
+        pe = m.start()
         bi.append((ps, pe))
-        ps = pe + 1
+        ps = m.end() + 1
 
     # Line count. Starts form 1, to be consistent with vim's G
     line = 1

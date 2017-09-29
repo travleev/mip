@@ -6,6 +6,7 @@ from cards import get_cards
 import re
 import cellcard
 import surfacecard
+import datacard
 
 re_comment = re.compile('[$&].*$', re.MULTILINE)
 re_spaces = re.compile('\s+')
@@ -50,6 +51,9 @@ class Card(object):
             name, tr, typ, params = surfacecard.split(self.content())
             return name, tr, typ, params
 
+        if self.type == 'd':
+            typ, name, params = datacard.split(self.content())
+            return name, typ, params
         else:
             raise NotImplementedError
 
@@ -94,5 +98,8 @@ if __name__ == '__main__':
         print b, l, utils.shorten(repr(txt))
 
     # split cards to parts
-    for c in input.cards(blocks='cs', skipcomments=True):
-        print c.position, c.content(), c.parts()
+    for c in input.cards(blocks='csd', skipcomments=True):
+        print '*'*60
+        print c.position
+        print c.content()
+        print c.parts()
