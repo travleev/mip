@@ -9,29 +9,85 @@ The other dictionary contains surfaces, mentioned in the cells.
 
 from surfaces import get_surfaces
 from cells import get_cells
-from parsegeom import get_ast, modify_ast
+from transforms import get_transforms
+from parsegeom import get_ast
+
+
+def extract_surfaces(ast):
+    """
+    Return set of surfaces used in ast.
+    """
+    s = set()
+    if isinstance(ast[1], tuple):
+        s.update(extract_surfaces(ast[1]))
+    else:
+        s.add(abs(ast[1]))
+    if isinstance(ast[2], tuple):
+        s.update(extract_surfaces(ast[2]))
+    else:
+        s.add(abs(ast[2]))
+    return s
 
 
 def get_geom(i, lim=None):
+    # read cells, surfaces and transformations from input
     cells = get_cells(i, lim=lim)
     surfs = get_surfaces(i)
+    trans = get_transforms(i)
 
+    # extract only surfaces, used in cells
+    used = set()
     for k, v in cells.items():
         mat, geom, opts = v
         ast = get_ast(geom)
         cells[k] = ast
+        used.update(extract_surfaces(ast))
+    usurf = {}
+    for s in used:
+        usurf[s] = surfs[s]
 
-    return cells, surfs
+    return cells, usurf, trans
 
-
+###############################################################################
 if __name__ == '__main__':
     from sys import argv
     from mip import MIP
     from testgrammar import pprint_dict
+    from forcad import translate
 
     i = MIP(argv[1])
-    cd, sd = get_geom(i, lim=10)
-    for k, ast in cd.items():
-        print 'cell', k
-        c = modify_ast(ast, sd)
-        print '\n'.join(pprint_dict(c))
+    if len(argv) >= 3:
+        lim = int(argv[2])
+    else:
+        lim = None
+    cd, sd, td = get_geom(i, lim=lim)
+    cads, wr = translate(sd, td)
+
+    fout = open(argv[1] + '.cells', 'w')
+    print 'World radius', wr
+    for k, v in cd.items():
+        print >>fout, k
+        print >>fout, '\n'.join(pprint_dict(v))
+    fout.close()
+
+    fout = open(argv[1] + '.surfaces', 'w')
+    for k, v in sd.items():
+        print >>fout, k
+        print >>fout, '\n'.join(pprint_dict(v))
+    fout.close()
+
+    fout = open(argv[1] + '.transforms', 'w')
+    for k, v in td.items():
+        print >>fout, k
+        print >>fout, '\n'.join(pprint_dict(v.split()))
+    fout.close()
+
+    fout = open(argv[1] + '.cads', 'w')
+    for k, v in cads.items():
+        print >>fout, k
+        print >>fout, '\n'.join(pprint_dict(v))
+    fout.close()
+
+    import json
+    f = open(argv[1] + '.json', 'w')
+    json.dump((cd, cads, wr), f)
