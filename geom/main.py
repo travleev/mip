@@ -11,12 +11,17 @@ from surfaces import get_surfaces
 from cells import get_cells
 from transforms import get_transforms
 from parsegeom import get_ast
+from semantics import Surface
 
 
 def extract_surfaces(ast):
     """
     Return set of surfaces used in ast.
     """
+    print '***extract_surfaces', type(ast), ast
+    if isinstance(ast, Surface):
+        return set((ast, ))
+
     s = set()
     if isinstance(ast[1], tuple):
         s.update(extract_surfaces(ast[1]))
@@ -30,6 +35,9 @@ def extract_surfaces(ast):
 
 
 def get_geom(i, lim=None):
+    if isinstance(i, str):
+        from mip import MIP
+        i = MIP(i)
     # read cells, surfaces and transformations from input
     cells = get_cells(i, lim=lim)
     surfs = get_surfaces(i)

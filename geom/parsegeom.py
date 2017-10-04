@@ -10,7 +10,7 @@ from semantics import GeomSemantics
 
 from os import path
 ebnf = path.join(path.dirname(__file__), 'grammars/geom.ebnf')
-print '*** ebnf', ebnf
+# print '*** ebnf', ebnf
 
 grammar = open(ebnf, 'r').read()
 parser = tatsu.compile(grammar)  # , left_recurion=False)

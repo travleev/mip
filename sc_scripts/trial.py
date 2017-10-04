@@ -12,14 +12,39 @@
 from os import environ
 import sys
 
-sys.path.append(environ['PYTHONPATH'])
+sys.path.insert(0, environ['PYTHONPATH'])
+for p in sys.path: print p
 
+import geom.main
+import geom.forcad
 
-from mip import geom
 fname = r'D:\github\mip\examples\simple2.inp'
 
 cd, sd, td = geom.main.get_geom(fname)
-cads, w = geom.main.translate(sd, td)
+cads, wr = geom.forcad.translate(sd, td)
+
+for k, v in cads.items(): 
+    print k
+    print v
+print wr
+
+
+
+
+
+
+
+
+
+
+
+d, td = geom.main.get_geom(fname)
+cads, wr = geom.forcad.translate(sd, td)
+
+
+
+
+
 
 
 
