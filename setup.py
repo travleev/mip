@@ -18,4 +18,5 @@ setup(name='mip',
       author='A.Travleev',
       author_email='anton.travleev@kit.edu',
       packages=['mip', 'geom'],
+      include_package_data=True,
       )

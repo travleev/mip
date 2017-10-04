@@ -8,7 +8,11 @@ from tatsu.ast import AST
 
 from semantics import GeomSemantics
 
-grammar = open('grammars/geom.ebnf', 'r').read()
+from os import path
+ebnf = path.join(path.dirname(__file__), 'grammars/geom.ebnf')
+print '*** ebnf', ebnf
+
+grammar = open(ebnf, 'r').read()
 parser = tatsu.compile(grammar)  # , left_recurion=False)
 
 # patterns to replace space denoting intersection with '*'
