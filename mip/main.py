@@ -11,6 +11,20 @@ import datacard
 re_comment = re.compile('[$&].*$', re.MULTILINE)
 re_spaces = re.compile('\s+')
 
+
+def card_debugger(meth):
+    def wrapper(*a, **kwa):
+        try:
+            return meth(*a, **kwa)
+        except Exception as e:
+            print "On line", a[0].position
+            print "Card lines:"
+            for l in a[0].lines:
+                print '    ', repr(l)
+            raise e
+    return wrapper
+
+
 class Card(object):
     def __init__(self, lines=[], position=0, type=None):
         self.lines = lines
@@ -18,14 +32,14 @@ class Card(object):
         self.type = type
         return
 
+    @card_debugger
     def content(self):
         """
         return one line containing only meaningful part of the card.
 
-
         From a list of lines representing a card with comments, extract only
-        meaningfull part (i.e. remove all comments and extra-spaces). The result is
-        a one-line string.
+        meaningfull part (i.e. remove all comments and extra-spaces). The result
+        is a one-line string.
 
         It is assumed that 1-st and last lines in the list are not comment lines
         (i.e.  that this text is obtained from
@@ -42,6 +56,7 @@ class Card(object):
         res = re_spaces.sub(' ', res)
         return res
 
+    @card_debugger
     def parts(self):
         if self.type == 'c':
             name, mat, geom, opts = cellcard.split_cell_card(self.content())
