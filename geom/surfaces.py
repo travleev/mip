@@ -17,7 +17,7 @@ def get_surfaces(input, lim=None):
         name = int(name)
         t = t.strip().lower()
         params = map(float, params.split())
-        d[name] = (bc, t, params)
+        d[name] = (bc, tr, t, params)
         n += 1
         if lim and n > lim:
             break

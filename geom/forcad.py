@@ -22,6 +22,7 @@ volume calculations in numjuggler).
 
 """
 
+from transforms import transform_point, transform_vector
 from math import atan
 
 # module main entry. This is a dictionary of functions that take MCNP surface
@@ -327,6 +328,18 @@ mcnp2cad['k/y'] = k_y
 mcnp2cad['k/z'] = k_z
 
 
+
+def apply_transform(frm, pin, tr):
+    """
+    Return transformed frame frm and point pin according to transformation tr
+    """
+    p, v = frm
+    pp = transform_point(p, tr)
+    vp = transform_vector(v, tr)
+    pinp = transform_point(pin, tr)
+    return (pp, vp), pinp
+
+
 def translate(surfaces, transform):
     """
     Return a dictionary of surfaces, suitable for passing to CAD.
@@ -334,8 +347,14 @@ def translate(surfaces, transform):
     Rw = 0.  # world radius.
     res = surfaces.__class__()  # surfaces can be an OrderedDict
     for k, v in surfaces.items():
-        tr, stype, pl = v
+        bc, tr, stype, pl = v
         f, s, p, rw = mcnp2cad[stype](pl)
+        if tr:
+            trpl = transform[int(tr)]
+            print 'transform', trpl
+            print 'orig:', f, p
+            f, p = apply_transform(f, p, trpl)
+            print 'tran:', f, p
         # TODO apply transformation here to f and p
         res[k] = stype, f, s, p
         if Rw < rw:
