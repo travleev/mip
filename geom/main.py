@@ -19,7 +19,7 @@ def extract_surfaces(ast):
     Return set of surfaces used in ast.
     """
     if isinstance(ast, Surface):
-        return set((ast, ))
+        return set((abs(ast), ))
     elif isinstance(ast, Cell):
         return set()
 
@@ -35,7 +35,7 @@ def extract_surfaces(ast):
     return s
 
 
-def get_geom(i, lim=None):
+def get_raw_geom(i, lim=None):
     if isinstance(i, str):
         from mip import MIP
         i = MIP(i)
@@ -43,6 +43,11 @@ def get_geom(i, lim=None):
     cells = get_cells(i, lim=lim)
     surfs = get_surfaces(i)
     trans = get_transforms(i)
+    return cells, surfs, trans
+
+
+def get_geom(i, lim=None):
+    cells, surfs, trans = get_raw_geom(i, lim)
 
     # extract only surfaces, used in cells
     used = set()
@@ -88,7 +93,7 @@ if __name__ == '__main__':
     fout = open(argv[1] + '.transforms', 'w')
     for k, v in td.items():
         print >>fout, k
-        print >>fout, '\n'.join(pprint_dict(v.split()))
+        print >>fout, v  #  '\n'.join(pprint_dict(v.split()))
     fout.close()
 
     fout = open(argv[1] + '.cads', 'w')
