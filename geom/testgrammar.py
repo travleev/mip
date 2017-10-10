@@ -13,8 +13,10 @@ def pprint_dict(d, indent=4, _level=1):
     # d items:
     if isinstance(d, dict):
         iterable = d.iteritems()
-    else:
+    elif isinstance(d, list):
         iterable = enumerate(d)
+    else:
+        iterable = enumerate([d])
     for k, v in iterable:
         if isinstance(v, dict) or isinstance(v, list):
             line = '{}{}:'.format(i, k)
