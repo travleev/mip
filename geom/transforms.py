@@ -13,6 +13,10 @@ def normalize_transform(name, dtype, params):
     """
     name = int(name)
     pl = map(float, params.split())
+    if len(pl) == 3:
+        # no rotational matrix is given. Use the identical one
+        dtype = dtype.replace('*', '')
+        pl = pl + [1, 0, 0, 0, 1, 0, 0, 0, 1]
     if dtype[0] == '*':
         pl[3:] = map(to_cos, pl[3:])
     return name, pl
