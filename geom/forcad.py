@@ -33,6 +33,32 @@ mcnp2cad = {}
 _offset = 1.0
 
 
+def _normal(x, y, z):
+    """
+    return arbitrary normal to (x, y, z)
+    """
+    if x != 0:
+        a = y
+        b = -x
+        c = 0
+    elif y != 0:
+        a = 0
+        b = z
+        c = -y
+    else:
+        a = -z
+        b = 0
+        c = x
+    check1 = a*x + b*y + c*z
+    check2 = _norm(a, b, c)
+    if check1 != 0 or check2 == 0:
+        print x, y, z
+        print a, b, c
+        print check1, check2
+        raise ValueError('Normal vector not normal or zero')
+    return a, b, c
+
+
 def _shift(x, y, z, A, B, C, d):
     """
     Shift point p=(x, y, z) along n=(A, B, C) to distance d.
@@ -61,7 +87,7 @@ def _sphere(x, y, z, R):
     pin = (x, y, z)
     # Here and below: wrad is world radius assessment for current surface
     wrad = _norm(x, y, z) + R + _offset
-    return frm, srf, pin, wrad
+    return 's', frm, srf, pin, wrad
 
 
 def _plane(x, y, z, A, B, C):
@@ -73,7 +99,7 @@ def _plane(x, y, z, A, B, C):
     srf = ()
     pin = _shift(x, y, z, A, B, C, -_offset)
     wrad = _norm(x, y, z) + _offset
-    return frm, srf, pin, wrad
+    return 'p', frm, srf, pin, wrad
 
 
 def _cylinder(x, y, z, r, A, B, C):
@@ -81,7 +107,7 @@ def _cylinder(x, y, z, r, A, B, C):
     srf = (r, )
     pin = (x, y, z)
     wrad = _norm(x, y, z) + r + _offset
-    return frm, srf, pin, wrad
+    return 'c', frm, srf, pin, wrad
 
 
 def _cone(x, y, z, tana, A, B, C):
@@ -96,7 +122,28 @@ def _cone(x, y, z, tana, A, B, C):
     frm = (p, (A, B, C))
     srf = (tana*_offset, atan(tana))
     wrad = _norm(x, y, z) + tana*_offset + _offset
-    return frm, srf, p, wrad
+    return 'k', frm, srf, p, wrad
+
+
+def _torus(x, y, z, A, B, C, r1, r2):
+    """
+    x, y, z -- coordinates of the center
+    A, B, C -- normal vector to the major radius
+    r1, r2  -- major and minor radii
+    """
+    frm = ((x, y, z), (A, B, C))
+    srf = (r1, r2)
+
+    # Point inside
+    n1, n2, n3 = _normal(A, B, C)
+    c = r1 / _norm(n1, n2, n3)
+    xi = x + c*n1
+    yi = y + c*n2
+    zi = z + c*n3
+    pin = (xi, yi, zi)
+    wrad = 1e5
+
+    return 't', frm, srf, pin, wrad
 
 
 ################################################################################
@@ -305,6 +352,91 @@ def k_z(p):
     return _cone(p[0], p[1], p[2], p[3]**0.5, 0, 0, 1)
 
 
+def _check_torus(p):
+    x, y, z, r1, r2, r3 = p
+    if r2 != r3:
+        raise NotImplementedError('Cannot convert torus with B != C')
+    return x, y, z, r1, r2
+
+
+def tx(p):
+    """"
+    Torus defined by `tx` surface.
+    """
+    x, y, z, r1, r2 = _check_torus(p)
+    return _torus(x, y, z, 1, 0, 0, r1, r2)
+
+
+def ty(p):
+    """"
+    Torus defined by `ty` surface.
+    """
+    x, y, z, r1, r2 = _check_torus(p)
+    return _torus(x, y, z, 0, 1, 0, r1, r2)
+
+
+def tz(p):
+    """"
+    Torus defined by `tz` surface.
+    """
+    x, y, z, r1, r2 = _check_torus(p)
+    return _torus(x, y, z, 0, 0, 1, r1, r2)
+
+
+def xx(p):
+    """
+    Surface defined by `x` surface.
+    """
+    # The meaning depends on lentgth of p and their relative position.
+    if len(p) == 2:
+        # only one pair is given. This is a px plane
+        return px(p)
+    elif len(p) == 4:
+        # Two points are given. This can be a px plane, a cx cylinder or a kx
+        # cone.
+        if p[0] == p[2]:
+            # this is a plane
+            return px(p)
+        elif p[1] == p[3]:
+            # this is a cylinder
+            return cx((p[1], ))
+        else:
+            # this is a cone
+            tana = (p[1] - p[3]) / (p[0] - p[2])  # half-angle tan
+            x0 = p[0] - p[1]/tana
+            return _cone(x0, 0, 0, tana, 1, 0, 0)
+    else:
+        raise NotImplementedError('Not implemented for more than 2 pairs of '
+                                  'axis-symmetric surface')
+
+
+def zz(p):
+    """
+    Surface defined by `z` surface.
+    """
+    # The meaning depends on lentgth of p and their relative position.
+    if len(p) == 2:
+        # only one pair is given. This is a px plane
+        return pz(p)
+    elif len(p) == 4:
+        # Two points are given. This can be a px plane, a cx cylinder or a kx
+        # cone.
+        if p[0] == p[2]:
+            # this is a plane
+            return pz(p)
+        elif p[1] == p[3]:
+            # this is a cylinder
+            return cz((p[1], ))
+        else:
+            # this is a cone
+            tana = (p[1] - p[3]) / (p[0] - p[2])  # half-angle tan
+            z0 = p[0] - p[1]/tana
+            return _cone(0, 0, z0, tana, 0, 0, 1)
+    else:
+        raise NotImplementedError('Not implemented for more than 2 pairs of '
+                                  'axis-symmetric surface')
+
+
 mcnp2cad['so'] = so
 mcnp2cad['sx'] = sx
 mcnp2cad['sy'] = sy
@@ -326,7 +458,11 @@ mcnp2cad['kz'] = kz
 mcnp2cad['k/x'] = k_x
 mcnp2cad['k/y'] = k_y
 mcnp2cad['k/z'] = k_z
-
+mcnp2cad['tx'] = tx
+mcnp2cad['ty'] = ty
+mcnp2cad['tz'] = tz
+mcnp2cad['x'] = xx
+mcnp2cad['z'] = zz
 
 
 def apply_transform(frm, pin, tr):
@@ -348,7 +484,8 @@ def translate(surfaces, transform):
     res = surfaces.__class__()  # surfaces can be an OrderedDict
     for k, v in surfaces.items():
         bc, tr, stype, pl = v
-        f, s, p, rw = mcnp2cad[stype](pl)
+        print k, bc, tr, stype, pl
+        t, f, s, p, rw = mcnp2cad[stype](pl)
         if tr:
             trpl = transform[int(tr)]
             print 'transform', trpl
@@ -356,7 +493,7 @@ def translate(surfaces, transform):
             f, p = apply_transform(f, p, trpl)
             print 'tran:', f, p
         # TODO apply transformation here to f and p
-        res[k] = stype, f, s, p
+        res[k] = t, f, s, p
         if Rw < rw:
             Rw = rw
     return res, Rw
