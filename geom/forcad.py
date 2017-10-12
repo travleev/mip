@@ -110,7 +110,7 @@ def _cylinder(x, y, z, r, A, B, C):
     return 'c', frm, srf, pin, wrad
 
 
-def _cone(x, y, z, tana, A, B, C):
+def _cone(x, y, z, tana, A, B, C, log=False):
     """
     x, y, z -- cone focus coordinates,
     A, B, C -- cone axis direction, normalized to unit length
@@ -122,6 +122,8 @@ def _cone(x, y, z, tana, A, B, C):
     frm = (p, (A, B, C))
     srf = (tana*_offset, atan(tana))
     wrad = _norm(x, y, z) + tana*_offset + _offset
+    if log:
+        print '_cone', frm, srf, p, wrad
     return 'k', frm, srf, p, wrad
 
 
@@ -404,7 +406,8 @@ def xx(p):
             # this is a cone
             tana = (p[1] - p[3]) / (p[0] - p[2])  # half-angle tan
             x0 = p[0] - p[1]/tana
-            return _cone(x0, 0, 0, tana, 1, 0, 0)
+            print 'xx', p, tana
+            return _cone(x0, 0, 0, abs(tana), 1, 0, 0, log=True)
     else:
         raise NotImplementedError('Not implemented for more than 2 pairs of '
                                   'axis-symmetric surface')
@@ -431,7 +434,8 @@ def zz(p):
             # this is a cone
             tana = (p[1] - p[3]) / (p[0] - p[2])  # half-angle tan
             z0 = p[0] - p[1]/tana
-            return _cone(0, 0, z0, tana, 0, 0, 1)
+            print 'xx', p, tana
+            return _cone(0, 0, z0, abs(tana), 0, 0, 1, log=True)
     else:
         raise NotImplementedError('Not implemented for more than 2 pairs of '
                                   'axis-symmetric surface')
@@ -484,15 +488,10 @@ def translate(surfaces, transform):
     res = surfaces.__class__()  # surfaces can be an OrderedDict
     for k, v in surfaces.items():
         bc, tr, stype, pl = v
-        print k, bc, tr, stype, pl
         t, f, s, p, rw = mcnp2cad[stype](pl)
         if tr:
             trpl = transform[int(tr)]
-            print 'transform', trpl
-            print 'orig:', f, p
             f, p = apply_transform(f, p, trpl)
-            print 'tran:', f, p
-        # TODO apply transformation here to f and p
         res[k] = t, f, s, p
         if Rw < rw:
             Rw = rw
