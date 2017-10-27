@@ -30,7 +30,7 @@ from math import atan
 mcnp2cad = {}
 
 # Offset to define a point 'below' a surface
-_offset = 1.0
+_offset = 1e-2
 
 
 def _normal(x, y, z):
@@ -64,7 +64,7 @@ def _shift(x, y, z, A, B, C, d):
     Shift point p=(x, y, z) along n=(A, B, C) to distance d.
 
     It is assumed that |n| = 1. In many cases I define coordinates of n manually
-    and than know in advance that they are normalized. Do not computing
+    and thus know in advance that they are normalized. Do not computing
     normalization here helps to save this computation for these case.
     """
     xx = x + A*d
@@ -82,12 +82,14 @@ def _norm(x, y, z):
 
 
 def _sphere(x, y, z, R):
+    x = x/1e2
+    y = y/1e2
+    z = z/1e2
+    R = R/1e2
     frm = ((x, y, z), (0, 0, 1))
     srf = (R, )
     pin = (x, y, z)
-    # Here and below: wrad is world radius assessment for current surface
-    wrad = _norm(x, y, z) + R + _offset
-    return 's', frm, srf, pin, wrad
+    return 's', frm, srf, pin
 
 
 def _plane(x, y, z, A, B, C):
@@ -95,19 +97,24 @@ def _plane(x, y, z, A, B, C):
     Plane throught the point (x, y, z) with the normal (A, B, C). The latter
     must be normalized to have unit length.
     """
+    x = x/1e2
+    y = y/1e2
+    z = z/1e2
     frm = ((x, y, z), (A, B, C))
     srf = ()
     pin = _shift(x, y, z, A, B, C, -_offset)
-    wrad = _norm(x, y, z) + _offset
-    return 'p', frm, srf, pin, wrad
+    return 'p', frm, srf, pin
 
 
 def _cylinder(x, y, z, r, A, B, C):
+    x = x/1e2
+    y = y/1e2
+    z = z/1e2
+    r = r/1e2
     frm = ((x, y, z), (A, B, C))
     srf = (r, )
     pin = (x, y, z)
-    wrad = _norm(x, y, z) + r + _offset
-    return 'c', frm, srf, pin, wrad
+    return 'c', frm, srf, pin
 
 
 def _cone(x, y, z, tana, A, B, C, log=False):
@@ -118,13 +125,15 @@ def _cone(x, y, z, tana, A, B, C, log=False):
 
     CAD requries a point on the axis not coincident with the focus.
     """
+    x = x/1e2
+    y = y/1e2
+    z = z/1e2
     p = _shift(x, y, z, A, B, C, _offset)
     frm = (p, (A, B, C))
     srf = (tana*_offset, atan(tana))
-    wrad = _norm(x, y, z) + tana*_offset + _offset
     if log:
-        print '_cone', frm, srf, p, wrad
-    return 'k', frm, srf, p, wrad
+        print '_cone', frm, srf, p
+    return 'k', frm, srf, p
 
 
 def _torus(x, y, z, A, B, C, r1, r2):
@@ -133,6 +142,11 @@ def _torus(x, y, z, A, B, C, r1, r2):
     A, B, C -- normal vector to the major radius
     r1, r2  -- major and minor radii
     """
+    x = x/1e2
+    y = y/1e2
+    z = z/1e2
+    r1 = r1/1e2
+    r2 = r2/1e2
     frm = ((x, y, z), (A, B, C))
     srf = (r1, r2)
 
@@ -143,9 +157,8 @@ def _torus(x, y, z, A, B, C, r1, r2):
     yi = y + c*n2
     zi = z + c*n3
     pin = (xi, yi, zi)
-    wrad = 1e5
 
-    return 't', frm, srf, pin, wrad
+    return 't', frm, srf, pin
 
 
 ################################################################################
@@ -473,6 +486,9 @@ def apply_transform(frm, pin, tr):
     """
     Return transformed frame frm and point pin according to transformation tr
     """
+    tr[0] = tr[0]/1e2
+    tr[1] = tr[1]/1e2
+    tr[2] = tr[2]/1e2
     p, v = frm
     pp = transform_point(p, tr)
     vp = transform_vector(v, tr)
@@ -484,18 +500,30 @@ def translate(surfaces, transform):
     """
     Return a dictionary of surfaces, suitable for passing to CAD.
     """
-    Rw = 0.  # world radius.
     res = surfaces.__class__()  # surfaces can be an OrderedDict
     for k, v in surfaces.items():
         bc, tr, stype, pl = v
-        t, f, s, p, rw = mcnp2cad[stype](pl)
+        t, f, s, p = mcnp2cad[stype](pl)
         if tr:
             trpl = transform[int(tr)]
             f, p = apply_transform(f, p, trpl)
         res[k] = t, f, s, p
-        if Rw < rw:
-            Rw = rw
-    return res, Rw
+    return res
+
+
+def get_dimensions(surfaces):
+    return 10.0
+
+
+def extract_intersections():
+    """
+    when intersecting surfaces in SC, some of points/curves appear
+    to be far from the original geometry. The idea is to represent arbitrary
+    cells in the form (S1 S2 S3 ...) : (S4 S5 ...) : ... , i.e. as union of
+    intersections. And search for points/curves only within each intersection
+    expression.
+    """
+    return
 
 
 # if __name__ == '__main__':

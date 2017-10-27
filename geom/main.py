@@ -75,10 +75,9 @@ if __name__ == '__main__':
     else:
         lim = None
     cd, sd, td = get_geom(i, lim=lim)
-    cads, wr = translate(sd, td)
+    cads = translate(sd, td)
 
     fout = open(argv[1] + '.cells', 'w')
-    print 'World radius', wr
     for k, v in cd.items():
         print >>fout, k
         print >>fout, '\n'.join(pprint_dict(v))
@@ -104,4 +103,4 @@ if __name__ == '__main__':
 
     import json
     f = open(argv[1] + '.json', 'w')
-    json.dump((cd, cads, wr), f)
+    json.dump((cd, cads), f)
