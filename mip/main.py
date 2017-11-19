@@ -73,6 +73,13 @@ class Card(object):
 
 
 class MIP(object):
+    """
+    Class to read general structure of an MCNP input file.
+
+    When created a new instance, it reads the content of the specified input
+    file.  Methods of the class help to access separate blocks and cards of the
+    input file.
+    """
     def __init__(self, fname, firstblock=None):
 
         # Text from the input file
@@ -80,20 +87,32 @@ class MIP(object):
 
         # Dictioary of indices describing position of blocks
         self.bi = get_block_positions(self.text, firstblock=firstblock)
-
         return
 
     def block(self, bid):
+        """
+        Return text of the specififed block.
+        """
         ii, l = self.bi[bid]
         return l, self.text[slice(*ii)]
 
     def blocks(self, blocks='mtcsd'):
+        """
+        Generator, returns blocks in the specified order.
+        """
         for b in blocks:
             if b in self.bi:
                 ii, l = self.bi[b]
                 yield b, l, self.text[slice(*ii)]
 
     def cards(self, blocks='csd', skipcomments=False):
+        """
+        Generator returns instances of Card class for blocks specified by the
+        user.
+
+        The c-comment lines between cards can be skipped if `skipcomments` is
+        True.
+        """
         for b, n0, txt in self.blocks(blocks):
             for c, n, t in get_cards(txt, skipcomments=skipcomments):
                 if t == 'card':

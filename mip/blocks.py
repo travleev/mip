@@ -59,8 +59,8 @@ bid = BIDClass()
 
 def get_block_positions(text, firstblock=None):
     """
-    Returns a dictionary with tuple of indices that identify block begin and
-    end.
+    Returns a dictionary with tuple of indices that identify block start and
+    end lines.
     """
 
     # Resulting dictionary

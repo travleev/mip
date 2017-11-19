@@ -4,18 +4,6 @@
 import re
 
 """
-Split one block of MCNP input file into separate cards and inter-card comments.
-
-Definition: C-comment is a comment line inside a card. B-comment is a comment
-line between cards, i.e. above the line where the next card begins. Several
-lines with B-comments compose a multi-line B-comment.
-
-Two types of elements in the resulting list: cards and B-comments. Both are,
-generally, multi-line strings.
-
-Card is a part of the block containing all lines belonging to a card, together
-with comments inside the card.
-
 """
 
 re_comment = re.compile('^\s{0,4}[cC](\s|$)')
@@ -29,8 +17,26 @@ def _yield(c1, n1, f, c2, n2):
     if not f and c2:
         yield c2, n2, 'cmnt'
 
+
 def get_cards(block, skipcomments=False):
     """
+    Split text in `block` into cards. Return card text, line number in the block
+    and type ('card' or 'cmnt').
+
+    The `block` represents one block of MCNP input file, which in general
+    consists of one or more cards and zero or more comment lines.
+
+    Definition: C-comment is a comment line inside a card. B-comment is a
+    comment line between cards, i.e. above the line where the next card begins.
+    Several lines with B-comments compose a multi-line B-comment.
+
+    The C-comments are returned within cards. The B-comments are returned
+    separately, when the `skipcomments` flag is False. Thus, Two types of
+    elements are returned: cards and B-comments. Both are, generally, multi-line
+    strings.
+
+    A card is a part of the block containing all lines belonging to a card,
+    including the C-comments.
 
     """
 
