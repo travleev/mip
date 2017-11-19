@@ -57,7 +57,7 @@ re_nonvoid = re.compile(r"""^(\s*[0-9]+)        # name
                         re.IGNORECASE + re.VERBOSE)
 
 
-def split_cell_card(txt):
+def split(txt):
     """
     Split cell card txt into parts.
 

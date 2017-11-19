@@ -1,9 +1,8 @@
+import re
 
 from blocks import get_block_positions
 from cards import get_cards
 
-
-import re
 import cellcard
 import surfacecard
 import datacard
@@ -59,7 +58,7 @@ class Card(object):
     @card_debugger
     def parts(self):
         if self.type == 'c':
-            name, mat, geom, opts = cellcard.split_cell_card(self.content())
+            name, mat, geom, opts = cellcard.split(self.content())
             return name, mat, geom, opts
 
         if self.type == 's':
