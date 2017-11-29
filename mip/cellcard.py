@@ -1,48 +1,44 @@
 #!/urs/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-Split cell card in name, material, geometry and options.
-
-A cells card always starts with its name followed by one or more spaces. The
-rest has two forms:
-
-    * "LIKE n but ..." form. Here the keywords "like" and "but" are delimited by
-    space(s).  The "but" keyword is followed by optional paramters, including
-    those using parentheses (trcl, fill) and multiple entries (fill in presence
-    of lat).
-
-    * Material (one or two entires delimited by one or more spaces), followed by
-    geometry description where entries can be delimited by spaces, colon and
-    parentheses, followed by optional parameters (like in the "like n but"
-    form).
-
-Therefore, the cell name (number) is always delimited from the following part by
-space(s).  The "like n but" entries also delimited by spaces. But geometry
-description part can be delimited from the material part and the part containing
-optional parameters with both space(s) and parentheses.
-
-The part with optional parameters starts with an alphabet character. It
-preceeded with a number followed by one or more space, or closing parenthesis,
-followed by zero or more spaces.
-
-Patterns of the cell card. Parts are delimited by '|' (one or more spaces) or
-by '||' (zero or more spaces, or parentheses).
-
-    N | like    | n | but        | options
-    N | zero            || geom || options
-    N | non-zero | dens || geom || options
-
-Options are optional.
-
-"""
+# Split cell card in name, material, geometry and options.
+#
+# A cells card always starts with its name followed by one or more spaces. The
+# rest has two forms:
+#
+#     * "LIKE n but ..." form. Here the keywords "like" and "but" are delimited
+#     by space(s).  The "but" keyword is followed by optional paramters,
+#     including those using parentheses (trcl, fill) and multiple entries (fill
+#     in presence of lat).
+#
+#     * Material (one or two entires delimited by one or more spaces), followed
+#     by geometry description where entries can be delimited by spaces, colon
+#     and parentheses, followed by optional parameters (like in the "like n but"
+#     form).
+#
+# Therefore, the cell name (number) is always delimited from the following part
+# by space(s).  The "like n but" entries also delimited by spaces. But geometry
+# description part can be delimited from the material part and the part
+# containing optional parameters with both space(s) and parentheses.
+#
+# The part with optional parameters starts with an alphabet character. It
+# preceeded with a number followed by one or more space, or closing parenthesis,
+# followed by zero or more spaces.
+#
+# Patterns of the cell card. Parts are delimited by '|' (one or more spaces) or
+# by '||' (zero or more spaces, or parentheses).
+#
+#     N | like    | n | but        | options
+#     N | zero            || geom || options
+#     N | non-zero | dens || geom || options
+#
+# Options are optional.
 
 import re
 
-# RE to find where options start
+# RE to find where options start, not for like-but syntax.
 re_options = re.compile('([\)\s])([a-zA-Z].*)$')
 
-# RE describing pattern of cell card without options
 re_likebut = re.compile(r"""^(\s*[0-9]+)     # name
                              (\s+like.*but)  # like-but geometry
                              (.*)$           # options""",

@@ -72,10 +72,10 @@ def modify_ast(ast, d):
 
 if __name__ == '__main__':
     from sys import argv
-    from mip import MIP
+    from mcrp_splitters import InputSplitter
     from mip.utils import shorten
 
-    input = MIP(argv[1])
+    input = InputSplitter(argv[1])
 
     n = 0
     for c in input.cards(blocks='c', skipcomments=True):

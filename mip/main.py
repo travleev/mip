@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 
 from blocks import get_block_positions
 from cards import get_cards
@@ -25,6 +26,12 @@ def card_debugger(meth):
 
 
 class Card(object):
+    """
+    Representation of a card in the MCNP input file.
+
+    The methods helps to get a content of a card (stripping out the comments)
+    and split a card into logical parts.
+    """
     def __init__(self, lines=[], position=0, type=None):
         self.lines = lines
         self.position = position
@@ -57,6 +64,20 @@ class Card(object):
 
     @card_debugger
     def parts(self):
+        """
+        Returns a tuple of strings representing different parts of a card.
+
+        How the card is splitted, depends wether it is a cell, surface or a data
+        card:
+
+            A cell card is splitted into its name, material, geometry and
+            options.
+
+            A surface card is splitted into its name, transformation, type and
+            parameters.
+
+            A data card is splitted into its name, type and parameters.
+        """
         if self.type == 'c':
             name, mat, geom, opts = cellcard.split(self.content())
             return name, mat, geom, opts
@@ -82,11 +103,14 @@ class MIP(object):
     """
     def __init__(self, fname, firstblock=None):
 
+        print datetime.now().isoformat()
         # Text from the input file
         self.text = open(fname, 'r').read()
+        print datetime.now().isoformat()
 
         # Dictioary of indices describing position of blocks
         self.bi = get_block_positions(self.text, firstblock=firstblock)
+        print datetime.now().isoformat()
         return
 
     def block(self, bid):
@@ -126,6 +150,13 @@ if __name__ == '__main__':
 
     input = MIP(argv[1])
 
+    print 'Start cycling cards', datetime.now().isoformat()
+    for c in input.cards():
+        print c.position
+        pass
+    print 'End   cycling cards', datetime.now().isoformat()
+
+    exit(0)
     # print blocs
     for b, l, txt in input.blocks():
         print b, l, utils.shorten(repr(txt))

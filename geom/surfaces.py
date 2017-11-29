@@ -26,9 +26,9 @@ def get_surfaces(input, lim=None):
 
 if __name__ == '__main__':
     from sys import argv
-    from mip import MIP
+    from mcrp_splitters import InputSplitter
 
-    i = MIP(argv[1])
+    i = InputSplitter(argv[1])
     d = get_surfaces(i, lim=None)
     print d.items()[0]
     print d.items()[-1]

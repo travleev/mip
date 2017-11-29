@@ -37,8 +37,8 @@ def extract_surfaces(ast):
 
 def get_raw_geom(i, lim=None):
     if isinstance(i, str):
-        from mip import MIP
-        i = MIP(i)
+        from mcrp_splitters import InputSplitter
+        i = InputSplitter(i)
     # read cells, surfaces and transformations from input
     cells = get_cells(i, lim=lim)
     surfs = get_surfaces(i)
@@ -65,11 +65,11 @@ def get_geom(i, lim=None):
 ###############################################################################
 if __name__ == '__main__':
     from sys import argv
-    from mip import MIP
+    from mcrp_splitters import InputSplitter
     from testgrammar import pprint_dict
     from forcad import translate
 
-    i = MIP(argv[1])
+    i = InputSplitter(argv[1])
     if len(argv) >= 3:
         lim = int(argv[2])
     else:
