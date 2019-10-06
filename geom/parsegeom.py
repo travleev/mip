@@ -20,6 +20,7 @@ re_union = re.compile('\s*:\s*')
 re_pareno = re.compile('\(\s*')
 re_parenc = re.compile('\s*\)')
 re_spaces = re.compile('\s+')
+re_compl = re.compile('#\s*')
 
 
 def normalize(geom):
@@ -35,9 +36,10 @@ def normalize(geom):
     # remove spaces after '(' and before ')'
     g = re_pareno.sub('(', g)
     g = re_parenc.sub(')', g)
-    # replace one or more spaces with exactly one ' '.
+    # remove spaces after complement operators
+    g = re_compl.sub('_', g)
+    # replace one or more spaces with exactly one '*'.
     g = re_spaces.sub('*', g)
-    g = g.replace('#', '_')
     return g
 
 
