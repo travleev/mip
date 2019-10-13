@@ -156,7 +156,7 @@ if __name__ == '__main__':
         pass
     print 'End   cycling cards', datetime.now().isoformat()
 
-    exit(0)
+    # exit(0)
     # print blocs
     for b, l, txt in input.blocks():
         print b, l, utils.shorten(repr(txt))
